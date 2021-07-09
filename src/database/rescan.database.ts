@@ -6,7 +6,7 @@ import {streams} from '../utility/csv.utility';
 import {log} from '../utility/log.utility';
 import {mkdir} from '../utility/file.utility';
 import {importTransactions, importTags} from '../database/import.database';
-import {storeTransaction, processAns} from '../database/sync.database';
+import {storeTransaction, processAns102} from '../database/sync.database';
 
 config();
 mkdir('snapshot');
@@ -64,7 +64,7 @@ export async function restoreTransaction(tx: string, height: string, type: strin
     }
 
     if (type === 'ans') {
-      await processAns(tx, Number(height));
+      await processAns102(tx, Number(height));
     }
 
     await importTransactions(`${process.cwd()}/cache/transaction.csv`);

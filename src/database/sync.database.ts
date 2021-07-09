@@ -15,7 +15,7 @@ import {transaction, tagValue, Tag} from '../query/transaction.query';
 import {getDataFromChunks} from '../query/node.query';
 import {importBlocks, importTransactions, importTags} from './import.database';
 import {DatabaseTag} from './transaction.database';
-import {cacheANSEntries} from '../caching/ans.entry.caching';
+import {cacheAns102Entries} from '../caching/ans.entry.caching';
 
 config();
 mkdir('snapshot');
@@ -42,6 +42,9 @@ export function configureSyncBar(start: number, end: number) {
   );
 }
 
+/**
+ * Entrypoint for the cron job
+ */
 export async function startSync() {
   const startHeight = await getLastBlock();
   currentHeight = startHeight;
@@ -75,6 +78,12 @@ export async function startSync() {
   }
 }
 
+/**
+ * A cron job get all transactions from the given block height onwards
+ * Once the last block is stored and indexed, the cron job will check every 30 seconds
+ *
+ * @param {number} height - block height to start from
+ */
 export async function parallelize(height: number) {
   clearTimeout(timer);
   timer = setTimeout(async () => {
@@ -192,10 +201,12 @@ export async function storeTransaction(tx: string, height: number, retry: boolea
 
     storeTags(formattedTransaction.id, preservedTags);
 
-    const ans102 = tagValue(preservedTags, 'Bundle-Type') === 'ANS-102';
+    const bundleType = tagValue(preservedTags, 'Bundle-Type');
 
-    if (ans102) {
-      await processAns(formattedTransaction.id, height);
+    if (bundleType === 'ANS-102') {
+      await processAns102(formattedTransaction.id, height);
+    } else if (bundleType === 'ANS-104') {
+      await processAns104(formattedTransaction.id, height);
     }
   } catch (error) {
     console.log('');
@@ -211,16 +222,24 @@ export async function storeTransaction(tx: string, height: number, retry: boolea
   }
 }
 
-export async function processAns(id: string, height: number, retry: boolean = true) {
+/**
+ * Processes an ANS-102 transaction and stores in a CSV stream
+ * This will be stored in the database when the cron task is run
+ *
+ * @param {string} id - transaction id of the bundle
+ * @param {number}  height - block height of transaction
+ * @param {boolean}  retry - flag which describes whether to retry
+ */
+export async function processAns102(id: string, height: number, retry: boolean = true) {
   try {
     const ansPayload = await getDataFromChunks(id);
     const ansTxs = await ansBundles.unbundleData(ansPayload.toString('utf-8'));
 
-    await cacheANSEntries(ansTxs);
-    await processANSTransaction(ansTxs, height);
+    await cacheAns102Entries(ansTxs);
+    await processAns102Transaction(ansTxs, height);
   } catch (error) {
     if (retry) {
-      await processAns(id, height, false);
+      await processAns102(id, height, false);
     } else {
       log.info(`[database] malformed ANS payload at height ${height} for tx ${id}`);
       streams.rescan.cache.write(`${id}|${height}|ans\n`);
@@ -231,7 +250,23 @@ export async function processAns(id: string, height: number, retry: boolean = tr
   }
 }
 
-export async function processANSTransaction(ansTxs: Array<DataItemJson>, height: number) {
+/**
+ * Processes an ANS-104 transaction and stores in a CSV stream
+ * This will be stored in the database when the cron task is run
+ *
+ * @param {string} id - transaction id of the bundle
+ * @param {number}  height - block height of transaction
+ * @param {boolean}  retry - flag which describes whether to retry
+ */
+export async function processAns104(id: string, height: number, retry: boolean = true) {
+  try {
+
+  } catch (e) {
+
+  }
+}
+
+export async function processAns102Transaction(ansTxs: Array<DataItemJson>, height: number) {
   for (let i = 0; i < ansTxs.length; i++) {
     const ansTx = ansTxs[i];
     const {ansTags, input} = serializeAnsTransaction(ansTx, height);

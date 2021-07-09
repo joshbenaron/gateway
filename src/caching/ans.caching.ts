@@ -4,7 +4,7 @@ import {cacheFolder} from './file.caching';
 import {ansBundles} from '../utility/ans.utility';
 import {getDataFromChunks} from '../query/node.query';
 import {tagToUTF8} from '../query/transaction.query';
-import {cacheANSEntries} from './ans.entry.caching';
+import {cacheAns102Entries} from './ans.entry.caching';
 
 export async function streamAndCacheAns(id: string): Promise<boolean> {
   try {
@@ -32,7 +32,7 @@ export async function streamAndCacheAns(id: string): Promise<boolean> {
 
     write(`${cacheFolder}/${id}`, JSON.stringify(ansTxsConverted, null, 2));
 
-    await cacheANSEntries(ansTxs);
+    await cacheAns102Entries(ansTxs);
 
     return true;
   } catch (error) {

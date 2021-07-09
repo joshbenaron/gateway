@@ -3,7 +3,7 @@ import {DataItemJson} from 'arweave-bundles';
 import {cacheFolder} from './file.caching';
 import {b64UrlToBuffer} from '../utility/encoding.utility';
 
-export async function cacheANSEntries(entries: Array<DataItemJson>) {
+export async function cacheAns102Entries(entries: Array<DataItemJson>) {
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const id = entry.id;
